@@ -1,0 +1,13 @@
+# Versions effectivement presentes dans l'image de base locale
+# scolarship-2026-main-api (Python 3.12.14). Pas de pip install au build
+# car l'image de base fournit deja toutes les dependances.
+fastapi==0.141.1
+uvicorn[standard]==0.52.1
+sqlalchemy==2.0.52
+asyncpg==0.31.0
+pydantic==2.13.4
+pydantic-settings==2.15.0
+PyJWT==2.13.0
+bcrypt==5.0.0
+python-dotenv==1.0.1
+email-validator==2.3.0

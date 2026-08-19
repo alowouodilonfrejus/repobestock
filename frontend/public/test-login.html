@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Test Login</title></head>
+<body>
+<script>
+(async () => {
+  try {
+    const r = await fetch('http://localhost:8000/api/v1/auth/login/json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'admin@example.com', password: 'change-moi' })
+    })
+    const d = await r.json()
+    localStorage.setItem('bestock_token', d.access_token)
+    localStorage.setItem('bestock_user', JSON.stringify({ email: 'admin@example.com', username: 'admin' }))
+    window.location.href = '/categories/1'
+  } catch (e) {
+    document.body.innerHTML = '<pre>ERR ' + e + '</pre>'
+  }
+})()
+</script>
+</body>
+</html>
