@@ -1,14 +1,14 @@
 <template>
   <NuxtLayout name="dashboard">
     <div class="max-w-6xl mx-auto">
-      <div class="mb-10 flex items-start justify-between">
+      <div class="mb-10 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Gestion des utilisateurs</h2>
-          <p class="text-gray-500 mt-2 text-lg">Créez, modifiez et contrôlez les comptes de la plateforme.</p>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Gestion des utilisateurs</h2>
+          <p class="text-gray-500 mt-2 text-base sm:text-lg">Créez, modifiez et contrôlez les comptes de la plateforme.</p>
         </div>
         <button
           @click="openCreate"
-          class="px-6 py-3 bg-blue-900 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition shadow-sm"
+          class="px-6 py-3 bg-blue-900 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition shadow-sm flex-shrink-0 w-full sm:w-auto"
         >
           + Nouvel utilisateur
         </button>
@@ -129,7 +129,7 @@
               v-model="form.password"
               :placeholder="editing ? 'Laisser vide pour ne pas changer' : 'Mot de passe'"
             />
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <UiSelect label="Rôle" v-model="form.role">
                 <option v-for="r in roles" :key="r.value" :value="r.value">{{ r.label }}</option>
               </UiSelect>
@@ -139,11 +139,11 @@
               </UiSelect>
             </div>
 
-            <div class="flex justify-end gap-4 pt-6">
-              <button type="button" @click="closeModal" class="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100 transition">
+            <div class="flex flex-wrap justify-end gap-4 pt-6">
+              <button type="button" @click="closeModal" class="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100 transition w-full sm:w-auto">
                 Annuler
               </button>
-              <button type="submit" class="px-6 py-2.5 bg-blue-900 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition">
+              <button type="submit" class="px-6 py-2.5 bg-blue-900 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition w-full sm:w-auto">
                 {{ editing ? 'Enregistrer' : 'Créer' }}
               </button>
             </div>

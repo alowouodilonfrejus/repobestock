@@ -1,12 +1,12 @@
 <template>
   <NuxtLayout name="dashboard">
     <div v-if="equipement" class="max-w-6xl mx-auto">
-      <div class="mb-10 flex items-start justify-between">
-        <div class="flex items-center gap-4">
-          <Icon :name="category?.icon || 'heroicons:archive-box'" class="h-10 w-10 text-blue-900" />
-          <div>
-            <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ equipement.nom }}</h2>
-            <p class="text-gray-500 mt-1 text-lg">
+      <div class="mb-10 flex flex-wrap items-start justify-between gap-4">
+        <div class="flex items-center gap-4 min-w-0">
+          <Icon :name="category?.icon || 'heroicons:archive-box'" class="h-10 w-10 text-blue-900 flex-shrink-0" />
+          <div class="min-w-0">
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight break-words">{{ equipement.nom }}</h2>
+            <p class="text-gray-500 mt-1 text-base sm:text-lg">
               <span class="font-mono text-sm bg-gray-100 px-1.5 py-0.5 rounded mr-2">{{ equipement.reference }}</span>
               {{ category?.name || '—' }}
             </p>
@@ -14,14 +14,14 @@
         </div>
         <NuxtLink
           :to="`/materiel/${equipement.categorie_id}/${equipement.id}`"
-          class="px-5 py-2.5 bg-blue-900 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition"
+          class="px-5 py-2.5 bg-blue-900 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition flex-shrink-0"
         >
           Modifier
         </NuxtLink>
       </div>
 
-      <div class="grid grid-cols-3 gap-8">
-        <div class="col-span-1 space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+        <div class="md:col-span-1 space-y-6">
           <UiCard title="Informations" class="shadow-sm border border-gray-200">
             <dl class="space-y-4 text-sm">
               <div>
@@ -60,7 +60,7 @@
           </UiCard>
         </div>
 
-        <div class="col-span-2">
+        <div class="md:col-span-2">
           <UiCard title="Historique de cet équipement" class="shadow-sm border border-gray-200">
             <div v-if="loadingHistorique" class="text-center py-10 text-gray-500">Chargement...</div>
             <div v-else-if="historique.length === 0" class="text-center py-10 text-gray-500">

@@ -19,10 +19,3 @@
     </section>
   </div>
 </template>
-
-<style>
-html {
-  scroll-behavior: smooth;
-  scroll-padding-top: 80px;
-}
-</style>

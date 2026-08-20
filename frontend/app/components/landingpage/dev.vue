@@ -58,7 +58,7 @@ const equipe: Membre[] = [
         </div>
 
         <!-- Grille des membres -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
           <div
             v-for="dev in equipe"
             :key="dev.id"

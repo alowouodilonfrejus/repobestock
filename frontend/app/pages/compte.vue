@@ -17,7 +17,7 @@
               <p class="text-sm text-gray-500">{{ authStore.user.email }}</p>
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-4 text-sm">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
               <p class="text-gray-500">Rôle</p>
               <p class="font-semibold text-gray-800">Administrateur</p>

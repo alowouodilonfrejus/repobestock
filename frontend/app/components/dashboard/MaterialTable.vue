@@ -1,30 +1,32 @@
 <template>
-  <div class="table-section">
-    <h3 class="section-title">Matériaux ajoutés récemment</h3>
-    <table class="table">
-      <thead>
-        <tr>
-          <th>NOM</th>
-          <th>CATÉGORIE</th>
-          <th>CARACTÉRISTIQUES</th>
-          <th>ÉTAT</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="item in materials" :key="item.id">
-          <td class="name-cell">
-            <Icon :name="item.icon" class="h-6 w-6 text-blue-900" /> {{ item.nom }}
-          </td>
-          <td>{{ item.categoryName }}</td>
-          <td class="char-cell">{{ item.characteristics }}</td>
-          <td class="status-cell">
-            <span :class="['status-badge', item.statusClass]">
-              {{ item.statut }}
-            </span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="bg-white p-4 sm:p-6 rounded-xl shadow-md border border-gray-100 mt-8">
+    <h3 class="text-lg font-semibold text-gray-700 mb-6 ml-1 sm:ml-0">Matériaux ajoutés récemment</h3>
+    <div class="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+      <table class="w-full border-collapse min-w-[560px]">
+        <thead>
+          <tr>
+            <th class="text-xs text-gray-500 text-left p-4 uppercase tracking-wide">NOM</th>
+            <th class="text-xs text-gray-500 text-left p-4 uppercase tracking-wide">CATÉGORIE</th>
+            <th class="text-xs text-gray-500 text-left p-4 uppercase tracking-wide hidden md:table-cell">CARACTÉRISTIQUES</th>
+            <th class="text-xs text-gray-500 text-left p-4 uppercase tracking-wide">ÉTAT</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in materials" :key="item.id">
+            <td class="font-medium text-gray-800 flex items-center gap-3 p-4 border-t border-gray-100">
+              <Icon :name="item.icon" class="h-6 w-6 text-blue-900" /> {{ item.nom }}
+            </td>
+            <td class="p-4 border-t border-gray-100">{{ item.categoryName }}</td>
+            <td class="p-4 border-t border-gray-100 hidden md:table-cell">{{ item.characteristics }}</td>
+            <td class="p-4 border-t border-gray-100">
+              <span :class="['px-3 py-1 rounded-full text-sm font-medium', item.statusClass]">
+                {{ item.statut }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
@@ -50,71 +52,8 @@ const materials = computed(() => {
       categoryName,
       characteristics,
       statut: statut?.nom || '—',
-      statusClass: statut?.nom?.toLowerCase().includes('maintenance') ? 'status-warning' : statut?.nom?.toLowerCase().includes('défectueux') || statut?.nom?.toLowerCase().includes('defectueux') ? 'status-error' : 'status-good',
+      statusClass: statut?.nom?.toLowerCase().includes('maintenance') ? 'bg-orange-50 text-orange-800' : statut?.nom?.toLowerCase().includes('défectueux') || statut?.nom?.toLowerCase().includes('defectueux') ? 'bg-red-50 text-red-700' : 'bg-teal-50 text-teal-700',
     };
   });
 });
 </script>
-
-<style scoped>
-.table-section {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-  margin-top: 2rem;
-  border: 1px solid #edf2f7;
-}
-.section-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #2d3748;
-  margin-bottom: 1.5rem;
-}
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-th {
-  font-size: 0.75rem;
-  color: #718096;
-  text-align: left;
-  padding: 1rem;
-  text-transform: uppercase;
-}
-td {
-  padding: 1rem;
-  border-top: 1px solid #edf2f7;
-}
-.name-cell {
-  font-weight: 500;
-  color: #2d3748;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.icon {
-  font-size: 1.2rem;
-  background-color: #f7fafc;
-  padding: 0.5rem;
-  border-radius: 8px;
-}
-.status-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-.status-good {
-  background-color: #e6fffa;
-  color: #2c7a7b;
-}
-.status-warning {
-  background-color: #fffaf0;
-  color: #975a16;
-}
-.status-error {
-  background-color: #fff5f5;
-  color: #c53030;
-}
-</style>

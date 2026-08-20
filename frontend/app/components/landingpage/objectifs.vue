@@ -3,15 +3,15 @@ const titre = "Objectifs"
 </script>
 
 <template>
-  <main class="min-h-screen flex justify-center items-center bg-[#23418e] p-10 font-sans">
+  <main class="min-h-screen flex justify-center items-center bg-[#23418e] px-5 py-14 sm:p-10 font-sans">
     <section class="w-full max-w-[950px] text-center">
-      <h1 class="text-[42px] text-white mb-[15px] font-bold">
+      <h1 class="text-3xl sm:text-4xl md:text-[42px] text-white mb-[15px] font-bold">
         {{ titre }}
       </h1>
 
       <div class="w-[90px] h-[5px] bg-white mx-auto mb-[35px] rounded-[20px]"></div>
 
-      <div class="text-[19px] text-white leading-[2] text-justify space-y-6">
+      <div class="text-base sm:text-[19px] text-white leading-[2] text-justify space-y-6">
         <p>
           <strong class="text-[#f77b07] font-bold">BeStock</strong> est une solution numérique innovante développée
           par <strong class="text-[#f77b07] font-bold">BeTogether</strong>, le premier espace où les marques, de toutes tailles et de tous horizons, sont mises en valeur, fidélisent leur clientèle, créent des liens avec des utilisateurs du monde entier et atteignent leurs objectifs commerciaux.

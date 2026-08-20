@@ -2,13 +2,13 @@
   <NuxtLayout name="dashboard">
     <div v-if="category && material" class="max-w-6xl mx-auto">
       <div class="mb-10">
-        <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Modification du matériel</h2>
-        <p class="text-gray-500 mt-2 text-lg">Modifiez les informations de « {{ material.nom }} » ({{ category.name }}).</p>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Modification du matériel</h2>
+        <p class="text-gray-500 mt-2 text-base sm:text-lg">Modifiez les informations de « {{ material.nom }} » ({{ category.name }}).</p>
       </div>
 
       <form @submit.prevent="handleSubmit" class="space-y-8">
-        <div class="grid grid-cols-3 gap-10">
-          <UiCard title="Identification principale" class="col-span-2 shadow-sm border border-gray-200">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10">
+          <UiCard title="Identification principale" class="md:col-span-2 shadow-sm border border-gray-200">
             <div class="mb-4">
               <p class="block text-sm text-gray-700 mb-1">Catégorie</p>
               <p class="border border-gray-200 rounded p-2 text-sm bg-gray-50">{{ category.icon }} {{ category.name }}</p>
@@ -20,7 +20,7 @@
               <h4 class="font-semibold text-gray-800 mb-4">
                 {{ category.icon }} Informations {{ category.name }}
               </h4>
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <template v-for="field in fields" :key="field.key">
                   <UiSelect
                     v-if="field.type === 'select'"
@@ -67,14 +67,14 @@
           </UiCard>
         </div>
 
-        <div class="mt-10 pt-8 border-t border-gray-200 flex justify-end gap-5">
-          <button type="button" @click="router.push(`/categories/${category.id}`)" class="px-8 py-3 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100 transition">
+        <div class="mt-10 pt-8 border-t border-gray-200 flex flex-wrap justify-end gap-5">
+          <button type="button" @click="router.push(`/categories/${category.id}`)" class="px-6 sm:px-8 py-3 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100 transition">
             Annuler
           </button>
-          <button type="button" @click="handleDelete" class="px-8 py-3 border border-red-300 text-red-700 rounded-lg text-sm font-semibold hover:bg-red-50 transition">
+          <button type="button" @click="handleDelete" class="px-6 sm:px-8 py-3 border border-red-300 text-red-700 rounded-lg text-sm font-semibold hover:bg-red-50 transition">
             Supprimer
           </button>
-          <button type="submit" class="px-8 py-3 bg-blue-900 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition shadow-sm">
+          <button type="submit" class="px-6 sm:px-8 py-3 bg-blue-900 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition shadow-sm w-full sm:w-auto">
             Enregistrer les modifications
           </button>
         </div>

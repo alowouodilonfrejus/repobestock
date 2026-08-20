@@ -13,11 +13,11 @@
 
       <UiCard title="Matériels associés" class="shadow-sm border border-gray-200">
         <div v-if="materials.length > 0" class="divide-y divide-gray-100">
-          <div v-for="material in materials" :key="material.id" class="py-4 flex items-center justify-between gap-4">
-            <div class="flex items-center gap-4">
-              <Icon :name="category.icon" class="h-6 w-6 text-blue-900" />
-              <div>
-                <p class="font-semibold text-gray-900">{{ material.nom }}</p>
+          <div v-for="material in materials" :key="material.id" class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-4 min-w-0">
+              <Icon :name="category.icon" class="h-6 w-6 text-blue-900 flex-shrink-0" />
+              <div class="min-w-0">
+                <p class="font-semibold text-gray-900 break-words">{{ material.nom }}</p>
                 <p class="text-sm text-gray-500">
                   <span v-if="material.reference" class="mr-2 text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{{ material.reference }}</span>
                   {{ summary(material) }}
@@ -27,7 +27,7 @@
                 </p>
               </div>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3 sm:flex-shrink-0">
               <span :class="['px-3 py-1 rounded-full text-xs font-semibold', statusClass(material.statut_id)]">
                 {{ statutName(material.statut_id) }}
               </span>

@@ -1,14 +1,14 @@
 <template>
   <NuxtLayout name="dashboard">
     <div class="max-w-6xl mx-auto">
-      <div class="mb-10 flex items-center justify-between">
+      <div class="mb-10 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Historique des actions</h2>
-          <p class="text-gray-500 mt-2 text-lg">Toutes les modifications effectuées sur les équipements.</p>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Historique des actions</h2>
+          <p class="text-gray-500 mt-2 text-base sm:text-lg">Toutes les modifications effectuées sur les équipements.</p>
         </div>
         <button
           @click="load"
-          class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100 transition"
+          class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100 transition flex-shrink-0"
         >
           ↻ Rafraîchir
         </button>

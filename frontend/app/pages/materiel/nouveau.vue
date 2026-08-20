@@ -2,14 +2,14 @@
   <NuxtLayout name="dashboard">
     <div class="max-w-6xl mx-auto">
       <div class="mb-10">
-        <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Enregistrement d'un nouveau matériel</h2>
-        <p class="text-gray-500 mt-2 text-lg">Remplissez les détails techniques pour enregistrer une nouvelle unité dans le système d'inventaire.</p>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Enregistrement d'un nouveau matériel</h2>
+        <p class="text-gray-500 mt-2 text-base sm:text-lg">Remplissez les détails techniques pour enregistrer une nouvelle unité dans le système d'inventaire.</p>
       </div>
 
       <form @submit.prevent="handleSubmit" class="space-y-8">
-        <div class="grid grid-cols-3 gap-10">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10">
           <!-- Identification principale -->
-          <UiCard title="Identification principale" class="col-span-2 shadow-sm border border-gray-200">
+          <UiCard title="Identification principale" class="md:col-span-2 shadow-sm border border-gray-200">
             <UiSelect label="Catégorie" v-model="form.categoryId" @change="onCategoryChange">
               <option value="">Sélectionner une catégorie</option>
               <option v-for="cat in catStore.categories" :key="cat.id" :value="cat.id">
@@ -25,7 +25,7 @@
               <h4 class="font-semibold text-gray-800 mb-4">
                 {{ activeCategory.icon }} Informations {{ activeCategory.name }}
               </h4>
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <template v-for="field in catStore.fieldsFor(form.categoryId)" :key="field.key">
                   <UiSelect
                     v-if="field.type === 'select'"
@@ -73,11 +73,11 @@
         </div>
 
         <!-- Actions -->
-        <div class="mt-10 pt-8 border-t border-gray-200 flex justify-end gap-5">
-          <button type="button" @click="resetForm" class="px-8 py-3 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100 transition">
+        <div class="mt-10 pt-8 border-t border-gray-200 flex flex-wrap justify-end gap-5">
+          <button type="button" @click="resetForm" class="px-6 sm:px-8 py-3 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100 transition">
             Annuler
           </button>
-          <button type="submit" class="px-8 py-3 bg-blue-900 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition shadow-sm">
+          <button type="submit" class="px-6 sm:px-8 py-3 bg-blue-900 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition shadow-sm w-full sm:w-auto">
             Enregistrer le matériel
           </button>
         </div>
