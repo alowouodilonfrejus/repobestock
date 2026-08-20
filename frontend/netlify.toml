@@ -1,0 +1,16 @@
+[build]
+  command = "npm run build"
+  publish = ".output/public"
+
+[build.environment]
+  NITRO_PRESET = "netlify"
+
+[context.production.environment]
+  # URL du backend PythonAnywhere (a ajuster selon ton nom d'utilisateur)
+  NUXT_PUBLIC_API_BASE = "https://<username>.pythonanywhere.com/api/v1"
+
+[context.deploy-preview.environment]
+  NUXT_PUBLIC_API_BASE = "https://<username>.pythonanywhere.com/api/v1"
+
+[context.branch-deploy.environment]
+  NUXT_PUBLIC_API_BASE = "https://<username>.pythonanywhere.com/api/v1"
