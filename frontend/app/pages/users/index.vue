@@ -158,9 +158,12 @@
 import { computed, reactive, ref, onMounted } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 import { useUsersStore } from '~/stores/users';
+import { getErrorMessage } from '@/utils/errors';
 
 const store = useUsersStore();
 const authStore = useAuthStore();
+const toast = useToast();
+const { confirmDialog } = useConfirm();
 
 const sortedUsers = computed(() => {
   return [...store.users].sort((a, b) => Number(a.is_active) - Number(b.is_active));
@@ -229,9 +232,10 @@ const closeApprove = () => {
 const handleApprove = async () => {
   try {
     await store.updateUser(approveUser.value.id, { is_active: true, role: approveRole.value });
+    toast.success('Compte activé avec succès.');
     closeApprove();
   } catch (error) {
-    alert(error.response?.data?.detail || 'Une erreur est survenue.');
+    toast.error(getErrorMessage(error));
   }
 };
 
@@ -241,25 +245,34 @@ const handleSubmit = async () => {
       const payload = { username: form.username, role: form.role, is_active: form.is_active };
       if (form.password) payload.password = form.password;
       await store.updateUser(editing.value.id, payload);
+      toast.success('Utilisateur modifié avec succès.');
     } else {
       if (!form.email.trim() || !form.password) {
-        alert('Email et mot de passe sont obligatoires.');
+        toast.error('Email et mot de passe sont obligatoires.');
         return;
       }
       await store.createUser({ email: form.email, username: form.username, password: form.password, role: form.role });
+      toast.success('Utilisateur créé avec succès.');
     }
     closeModal();
   } catch (error) {
-    alert(error.response?.data?.detail || 'Une erreur est survenue.');
+    toast.error(getErrorMessage(error));
   }
 };
 
 const confirmDelete = async (user) => {
-  if (!confirm(`Supprimer l'utilisateur ${user.username || user.email} ?`)) return;
+  const ok = await confirmDialog({
+    title: 'Supprimer l\'utilisateur',
+    message: `Supprimer ${user.username || user.email} ? Cette action est irréversible.`,
+    confirmLabel: 'Supprimer',
+    danger: true,
+  });
+  if (!ok) return;
   try {
     await store.deleteUser(user.id);
+    toast.success('Utilisateur supprimé.');
   } catch (error) {
-    alert(error.response?.data?.detail || 'Une erreur est survenue.');
+    toast.error(getErrorMessage(error));
   }
 };
 

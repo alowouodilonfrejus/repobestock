@@ -91,10 +91,12 @@ import { reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCategoriesStore } from '@/stores/categories';
 import { useEquipementsStore } from '@/stores/equipements';
+import { getErrorMessage } from '@/utils/errors';
 
 const router = useRouter();
 const catStore = useCategoriesStore();
 const eqStore = useEquipementsStore();
+const toast = useToast();
 
 onMounted(async () => {
   await Promise.all([catStore.fetchReferentiels(), eqStore.fetchEquipements()]);
@@ -135,15 +137,15 @@ const resetForm = () => {
 
 const handleSubmit = async () => {
   if (!form.categoryId) {
-    alert('Veuillez sélectionner une catégorie.');
+    toast.error('Veuillez sélectionner une catégorie.');
     return;
   }
   if (!form.name.trim()) {
-    alert('Veuillez renseigner le nom du matériel.');
+    toast.error('Veuillez renseigner le nom du matériel.');
     return;
   }
   if (!form.statut_id) {
-    alert('Veuillez sélectionner un statut.');
+    toast.error('Veuillez sélectionner un statut.');
     return;
   }
   try {
@@ -156,10 +158,10 @@ const handleSubmit = async () => {
         catStore.fieldsFor(form.categoryId).map((f) => [f.key, form[f.key] || undefined])
       ),
     });
-    alert('Matériel enregistré avec succès.');
+    toast.success('Matériel enregistré avec succès.');
     resetForm();
   } catch (error) {
-    alert(error.response?.data?.detail || 'Erreur lors de l\'enregistrement.');
+    toast.error(getErrorMessage(error, 'Erreur lors de l\'enregistrement.'));
   }
 };
 </script>

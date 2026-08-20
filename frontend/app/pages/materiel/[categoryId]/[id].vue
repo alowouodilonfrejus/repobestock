@@ -92,11 +92,14 @@ import { reactive, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCategoriesStore } from '@/stores/categories';
 import { useEquipementsStore } from '@/stores/equipements';
+import { getErrorMessage } from '@/utils/errors';
 
 const route = useRoute();
 const router = useRouter();
 const catStore = useCategoriesStore();
 const eqStore = useEquipementsStore();
+const toast = useToast();
+const { confirmDialog } = useConfirm();
 
 onMounted(() => {
   Promise.all([catStore.fetchReferentiels(), eqStore.fetchEquipements()]);
@@ -128,7 +131,7 @@ watch(
 
 const handleSubmit = async () => {
   if (!form.name.trim()) {
-    alert('Veuillez renseigner le nom du matériel.');
+    toast.error('Veuillez renseigner le nom du matériel.');
     return;
   }
   try {
@@ -140,22 +143,27 @@ const handleSubmit = async () => {
         fields.value.map((f) => [f.key, form[f.key] || undefined])
       ),
     });
-    alert('Matériel modifié avec succès.');
+    toast.success('Matériel modifié avec succès.');
     router.push(`/categories/${route.params.categoryId}`);
   } catch (error) {
-    alert(error.response?.data?.detail || 'Erreur lors de la modification.');
+    toast.error(getErrorMessage(error, 'Erreur lors de la modification.'));
   }
 };
 
 const handleDelete = async () => {
-  if (confirm(`Supprimer « ${material.value.nom} » ?`)) {
-    try {
-      await eqStore.removeMaterial(route.params.id);
-      alert('Matériel supprimé.');
-      router.push(`/categories/${route.params.categoryId}`);
-    } catch (error) {
-      alert(error.response?.data?.detail || 'Erreur lors de la suppression.');
-    }
+  const ok = await confirmDialog({
+    title: 'Supprimer le matériel',
+    message: `Supprimer « ${material.value.nom} » ? Cette action est irréversible.`,
+    confirmLabel: 'Supprimer',
+    danger: true,
+  });
+  if (!ok) return;
+  try {
+    await eqStore.removeMaterial(route.params.id);
+    toast.success('Matériel supprimé.');
+    router.push(`/categories/${route.params.categoryId}`);
+  } catch (error) {
+    toast.error(getErrorMessage(error, 'Erreur lors de la suppression.'));
   }
 };
 </script>
