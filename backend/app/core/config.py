@@ -21,11 +21,6 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_PASSWORD: str = "admin1234"
     FIRST_SUPERUSER_USERNAME: str = "superadmin"
 
-    # Active le mode "sans pool de connexions" (NullPool). Necessaire sur
-    # PythonAnywhere (app servie via WSGI) car chaque requete cree sa propre
-    # boucle d'evenements : un pool partage serait reutilise entre les boucles.
-    USE_NULLPOOL: bool = False
-
 
 @lru_cache
 def get_settings() -> Settings:

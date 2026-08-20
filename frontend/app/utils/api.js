@@ -1,9 +1,7 @@
 import axios from 'axios'
 
-const apiBase = import.meta.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000/api/v1'
-
 const api = axios.create({
-  baseURL: apiBase,
+  baseURL: 'http://localhost:8000/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
