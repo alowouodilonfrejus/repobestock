@@ -17,5 +17,14 @@ export default defineNuxtConfig({
       scan: true,
       collections: ['heroicons', 'mdi']
     }
+  },
+  routeRules: {
+    '/api/**': { proxy: 'http://localhost:8000/api/**' }
+  },
+  vite: {
+    server: {
+      allowedHosts: true,
+      host: '0.0.0.0'
+    }
   }
 })
