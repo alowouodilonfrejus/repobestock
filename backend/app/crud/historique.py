@@ -51,3 +51,30 @@ async def create(
     await db.commit()
     await db.refresh(entree)
     return entree
+
+
+async def create_no_commit(
+    db: AsyncSession,
+    equipement_id: int,
+    action: str,
+    ancienne_valeur: str | None = None,
+    nouvelle_valeur: str | None = None,
+    utilisateur_id: int | None = None,
+    adresse_ip: str | None = None,
+) -> Historique:
+    """Ajoute une entree SANS commit : la transaction appartient au service.
+
+    Utilisee par les operations critiques (affectations, retours, maintenance)
+    ou plusieurs ecritures doivent reussir ou echouer ensemble.
+    """
+    entree = Historique(
+        utilisateur_id=utilisateur_id,
+        equipement_id=equipement_id,
+        action=action,
+        ancienne_valeur=ancienne_valeur,
+        nouvelle_valeur=nouvelle_valeur,
+        adresse_ip=adresse_ip,
+    )
+    db.add(entree)
+    await db.flush()
+    return entree

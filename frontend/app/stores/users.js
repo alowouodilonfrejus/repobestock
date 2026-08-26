@@ -30,6 +30,17 @@ export const useUsersStore = defineStore('users', {
       if (idx !== -1) this.users[idx] = data
       return data
     },
+    async validerUser(id, payload = {}) {
+      const { data } = await api.post(`/users/${id}/valider`, payload)
+      const idx = this.users.findIndex((u) => u.id === Number(id))
+      if (idx !== -1) this.users[idx] = data
+      return data
+    },
+    async rejeterUser(id) {
+      await api.post(`/users/${id}/rejeter`)
+      this.users = this.users.filter((u) => u.id !== Number(id))
+      this.total = Math.max(0, this.total - 1)
+    },
     async deleteUser(id) {
       await api.delete(`/users/${id}`)
       this.users = this.users.filter((u) => u.id !== Number(id))

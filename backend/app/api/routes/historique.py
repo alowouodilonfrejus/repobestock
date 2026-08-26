@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query
 
-from app.api.deps import ActiveUser, DbSession
+from app.api.deps import DbSession, PermDep
 from app.crud import historique as crud_historique
 from app.schemas.historique import HistoriqueRead
 
@@ -10,7 +10,7 @@ router = APIRouter(prefix="/historique", tags=["historique"])
 @router.get("", response_model=list[HistoriqueRead])
 async def read_historique(
     db: DbSession,
-    current_user: ActiveUser,
+    current_user: PermDep("historique:read"),
     skip: int = Query(0, ge=0),
     limit: int = Query(200, ge=1, le=1000),
 ):

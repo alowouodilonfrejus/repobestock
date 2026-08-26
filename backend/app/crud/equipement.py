@@ -76,6 +76,8 @@ async def create(
 ) -> Equipement:
     equipement = Equipement(**payload.model_dump())
     equipement.created_by = user_id
+    # A la creation, tout le stock est disponible.
+    equipement.quantite_disponible = payload.quantite
     db.add(equipement)
     await db.commit()
     await db.refresh(equipement)
@@ -88,7 +90,14 @@ async def update(
     payload: EquipementUpdate,
     user_id: int | None = None,
 ) -> Equipement:
-    for key, value in payload.model_dump(exclude_unset=True).items():
+    data = payload.model_dump(exclude_unset=True)
+    # Si le stock total change, la disponibilite suit le meme delta.
+    if "quantite" in data and data["quantite"] != equipement.quantite:
+        delta = data["quantite"] - equipement.quantite
+        equipement.quantite_disponible = max(
+            0, equipement.quantite_disponible + delta
+        )
+    for key, value in data.items():
         setattr(equipement, key, value)
     equipement.updated_by = user_id
     db.add(equipement)

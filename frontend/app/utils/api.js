@@ -1,9 +1,20 @@
 import axios from 'axios'
 
-const apiBase = import.meta.env.NUXT_PUBLIC_API_BASE || '/api/v1'
+function getApiBase() {
+  // SSR: ne jamais appeler useRuntimeConfig au top-level (NUXT_E1001)
+  // useRuntimeConfig() n'est valide que dans setup/plugin/middleware
+  if (import.meta.server) return '/api/v1'
+  try {
+    if (typeof useRuntimeConfig === 'function') {
+      const cfg = useRuntimeConfig()
+      if (cfg?.public?.apiBase) return cfg.public.apiBase
+    }
+  } catch {}
+  return import.meta.env.NUXT_PUBLIC_API_BASE || '/api/v1'
+}
 
 const api = axios.create({
-  baseURL: apiBase,
+  baseURL: getApiBase(),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -15,9 +26,12 @@ let refreshPromise = null
 
 function clearSession() {
   if (typeof localStorage !== 'undefined') {
-    localStorage.removeItem('bestock_token')
-    localStorage.removeItem('bestock_refresh')
-    localStorage.removeItem('bestock_user')
+    try {
+      localStorage.removeItem('bestock_token')
+      localStorage.removeItem('bestock_refresh')
+      localStorage.removeItem('bestock_user')
+      localStorage.removeItem('bestock_permissions')
+    } catch {}
   }
   if (typeof window !== 'undefined' && window.location.pathname !== '/connexion') {
     window.location.href = '/connexion'
@@ -26,21 +40,24 @@ function clearSession() {
 
 async function refreshTokens() {
   if (refreshPromise) return refreshPromise
-  const refreshToken = localStorage.getItem('bestock_refresh')
+  const refreshToken = typeof localStorage !== 'undefined' ? localStorage.getItem('bestock_refresh') : null
   if (!refreshToken) {
-    refreshPromise = Promise.reject(new Error('No refresh token'))
-  } else {
-    refreshPromise = api
-      .post('/auth/refresh', { refresh_token: refreshToken })
-      .then(({ data }) => {
-        localStorage.setItem('bestock_token', data.access_token)
-        localStorage.setItem('bestock_refresh', data.refresh_token)
-        return data.access_token
-      })
+    return Promise.reject(new Error('No refresh token'))
   }
-  refreshPromise = refreshPromise.finally(() => {
-    refreshPromise = null
-  })
+  refreshPromise = api
+    .post('/auth/refresh', { refresh_token: refreshToken })
+    .then(({ data }) => {
+      localStorage.setItem('bestock_token', data.access_token)
+      localStorage.setItem('bestock_refresh', data.refresh_token)
+      return data.access_token
+    })
+    .catch((e) => {
+      // Token invalide/expire -> ne pas boucler, propager pour clearSession
+      throw e
+    })
+    .finally(() => {
+      refreshPromise = null
+    })
   return refreshPromise
 }
 
@@ -67,12 +84,14 @@ api.interceptors.response.use(
         original.headers.Authorization = `Bearer ${newToken}`
         return api(original)
       } catch (refreshError) {
+        // Echec refresh -> deconnecter, mais ne pas boucler
         clearSession()
         return Promise.reject(refreshError)
       }
     }
 
-    if (error.response?.status === 401) {
+    // Ne deconnecter que si ce n'est pas une requete d'auth (login echoue != session expiree)
+    if (error.response?.status === 401 && !isAuthUrl) {
       clearSession()
     }
 

@@ -1,11 +1,14 @@
 from datetime import date, datetime
+from enum import Enum
 
 from sqlalchemy import (
     Date,
     DateTime,
+    Enum as SAEnum,
     ForeignKey,
     Index,
     Integer,
+    Numeric,
     String,
     Text,
     func,
@@ -13,6 +16,14 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+
+class EtatMateriel(str, Enum):
+    NEUF = "neuf"
+    TRES_BON = "tres_bon"
+    BON = "bon"
+    A_VERIFIER = "a_verifier"
+    ENDOMMAGE = "endommage"
 
 
 class Equipement(Base):
@@ -33,6 +44,24 @@ class Equipement(Base):
         String(150), unique=True, nullable=True
     )
     date_acquisition: Mapped[date | None] = mapped_column(Date, nullable=True)
+
+    # Gestion de stock par quantite (defaut 1 pour les uniques)
+    quantite: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    quantite_disponible: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+
+    etat: Mapped[EtatMateriel] = mapped_column(
+        SAEnum(
+            EtatMateriel,
+            name="etatemateriel",
+            values_callable=lambda e: [m.value for m in e],
+        ),
+        default=EtatMateriel.NEUF,
+        nullable=False,
+    )
+    prix_achat: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    fournisseur_id: Mapped[int | None] = mapped_column(
+        ForeignKey("fournisseurs.id"), nullable=True
+    )
 
     categorie_id: Mapped[int] = mapped_column(
         ForeignKey("categories.id"), nullable=False
@@ -62,5 +91,8 @@ class Equipement(Base):
     categorie: Mapped["Category"] = relationship(back_populates="equipements")
     statut: Mapped["Statut"] = relationship(back_populates="equipements")
     emplacement: Mapped["Emplacement | None"] = relationship(
+        back_populates="equipements"
+    )
+    fournisseur: Mapped["Fournisseur | None"] = relationship(
         back_populates="equipements"
     )

@@ -60,7 +60,14 @@
                     :disabled="user.id === currentUserId"
                     class="text-green-700 hover:bg-green-50 px-3 py-1.5 rounded-lg font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition"
                   >
-                    Activer
+                    Valider
+                  </button>
+                  <button
+                    v-if="!user.is_active"
+                    @click="confirmReject(user)"
+                    class="text-orange-600 hover:bg-orange-50 px-3 py-1.5 rounded-lg font-semibold transition"
+                  >
+                    Rejeter
                   </button>
                   <button
                     @click="openEdit(user)"
@@ -169,11 +176,20 @@ const sortedUsers = computed(() => {
   return [...store.users].sort((a, b) => Number(a.is_active) - Number(b.is_active));
 });
 
-const roles = [
-  { value: 'superadmin', label: 'Super Admin' },
-  { value: 'admin', label: 'Admin' },
-  { value: 'manager', label: 'Manager' },
-];
+const roles = computed(() => {
+  if (authStore.user?.role === 'superadmin') {
+    return [
+      { value: 'superadmin', label: 'Super Admin' },
+      { value: 'admin', label: 'Admin' },
+      { value: 'manager', label: 'Manager' },
+      { value: 'employe', label: 'Collaborateur' },
+    ];
+  }
+  return [
+    { value: 'manager', label: 'Manager' },
+    { value: 'employe', label: 'Collaborateur' },
+  ];
+});
 
 const showModal = ref(false);
 const editing = ref(null);
@@ -184,11 +200,12 @@ const form = reactive({ email: '', username: '', password: '', role: 'manager', 
 
 const currentUserId = authStore.user?.id;
 
-const roleLabel = (role) => roles.find((r) => r.value === role)?.label || role;
+const roleLabel = (role) => roles.value.find((r) => r.value === role)?.label || role;
 const roleBadge = (role) => ({
   superadmin: 'bg-purple-50 text-purple-700',
   admin: 'bg-blue-50 text-blue-700',
   manager: 'bg-amber-50 text-amber-700',
+  employe: 'bg-teal-50 text-teal-700',
 }[role] || 'bg-gray-100 text-gray-600');
 
 const initials = (user) => {
@@ -220,7 +237,8 @@ const closeModal = () => {
 
 const openApprove = (user) => {
   approveUser.value = user;
-  approveRole.value = user.role;
+  const defaultRole = roles.value.some((r) => r.value === user.role) ? user.role : 'employe';
+  approveRole.value = defaultRole;
   showApprove.value = true;
 };
 
@@ -231,9 +249,25 @@ const closeApprove = () => {
 
 const handleApprove = async () => {
   try {
-    await store.updateUser(approveUser.value.id, { is_active: true, role: approveRole.value });
-    toast.success('Compte activé avec succès.');
+    await store.validerUser(approveUser.value.id, { role: approveRole.value });
+    toast.success('Compte validé avec succès.');
     closeApprove();
+  } catch (error) {
+    toast.error(getErrorMessage(error));
+  }
+};
+
+const confirmReject = async (user) => {
+  const ok = await confirmDialog({
+    title: 'Rejeter l\'inscription',
+    message: `Rejeter ${user.email} ? Le compte en attente sera définitivement supprimé.`,
+    confirmLabel: 'Rejeter',
+    danger: true,
+  });
+  if (!ok) return;
+  try {
+    await store.rejeterUser(user.id);
+    toast.success('Inscription rejetée.');
   } catch (error) {
     toast.error(getErrorMessage(error));
   }

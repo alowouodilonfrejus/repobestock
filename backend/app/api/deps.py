@@ -11,7 +11,7 @@ from app.db.session import get_db
 from app.models.user import User, UserRole
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_STR}/auth/login"
+    tokenUrl=f"{settings.API_V1_STR}/auth/login/json"
 )
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
@@ -71,5 +71,63 @@ def RolesDep(*roles: UserRole):
     return Annotated[User, Depends(require_roles(*roles))]
 
 
-async def get_client_ip(request: Request) -> str:
+def require_permission(permission: str):
+    """Role Guard base sur la matrice centralisee app/core/permissions.py."""
+
+    from app.core.permissions import is_superadmin, role_has
+    import logging
+
+    async def _checker(current_user: ActiveUser) -> User:
+        if not role_has(current_user.role, permission):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Privileges insuffisants",
+            )
+        # Audit : tracer tout acces SUPERADMIN via wildcard
+        if is_superadmin(current_user.role) and permission != "*":
+            logging.getLogger("bestock.rbac").info(
+                "SUPERADMIN wildcard: user=%s (%s) permission=%s",
+                current_user.id,
+                current_user.email,
+                permission,
+            )
+        return current_user
+
+    return _checker
+
+
+def require_own_or_permission(permission: str, own_check=None):
+    """ABAC : autorise si permission globale OU si own_check(user) == True.
+
+    Ex: require_own_or_permission('employes:read', lambda u, eid: u.employe_id==eid)
+    Simplifie pour /moi : tout ActiveUser avec moi:read passe.
+    """
+
+    from app.core.permissions import role_has
+
+    async def _checker(current_user: ActiveUser) -> User:
+        if role_has(current_user.role, permission):
+            return current_user
+        # Fallback ABAC : employe sur son propre espace
+        if role_has(current_user.role, "moi:read"):
+            # Les routes /moi ou /{id} avec id == employe lie sont autorisees
+            # Le check fin (id == employe.id) est fait dans la route elle-meme
+            return current_user
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Privileges insuffisants",
+        )
+
+    return _checker
+
+
+def PermDep(permission: str):
+    return Annotated[User, Depends(require_permission(permission))]
+
+
+async def get_client_ip(request: Request) -> str | None:
+    # Derriere reverse-proxy (Nginx/Traefik) l'IP reelle est dans X-Forwarded-For
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
     return request.client.host if request.client else None

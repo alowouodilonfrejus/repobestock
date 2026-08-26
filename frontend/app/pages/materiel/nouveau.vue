@@ -72,6 +72,28 @@
           </UiCard>
         </div>
 
+        <!-- Affectation immédiate -->
+        <UiCard class="mt-6 shadow-sm border border-gray-200">
+          <label class="flex items-center gap-3 text-sm font-semibold text-gray-800 cursor-pointer">
+            <input
+              v-model="affecterApresCreation"
+              type="checkbox"
+              class="rounded border-gray-300 text-blue-900 focus:ring-blue-900"
+            />
+            Affecter ce matériel dès sa création
+          </label>
+          <p class="text-xs text-gray-500 mt-1.5">Optionnel — le matériel sera attribué à un collaborateur juste après l'enregistrement.</p>
+          <div v-if="affecterApresCreation" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <UiSelect label="Collaborateur *" v-model="affectation.employe_id">
+              <option value="">Sélectionner un collaborateur</option>
+              <option v-for="emp in employesStore.employes.filter(e => e.actif)" :key="emp.id" :value="emp.id">
+                {{ emp.nom_complet }} ({{ emp.matricule }})
+              </option>
+            </UiSelect>
+            <UiInput label="Date de retour prévue (optionnel)" type="date" v-model="affectation.date_retour_prevue" />
+          </div>
+        </UiCard>
+
         <!-- Actions -->
         <div class="mt-10 pt-8 border-t border-gray-200 flex flex-wrap justify-end gap-5">
           <button type="button" @click="resetForm" class="px-6 sm:px-8 py-3 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100 transition">
@@ -87,21 +109,27 @@
 </template>
 
 <script setup>
-import { reactive, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { reactive, computed, onMounted, ref } from 'vue';
 import { useCategoriesStore } from '@/stores/categories';
 import { useEquipementsStore } from '@/stores/equipements';
+import { useEmployesStore } from '@/stores/employes';
+import { useAffectationsStore } from '@/stores/affectations';
 import { getErrorMessage } from '@/utils/errors';
 
 const router = useRouter();
 const catStore = useCategoriesStore();
 const eqStore = useEquipementsStore();
+const employesStore = useEmployesStore();
+const affStore = useAffectationsStore();
 const toast = useToast();
 
 onMounted(async () => {
-  await Promise.all([catStore.fetchReferentiels(), eqStore.fetchEquipements()]);
-  form.statut_id = defaultStatutId;
+  await Promise.all([catStore.fetchReferentiels(), eqStore.fetchEquipements(), employesStore.fetchEmployes()]);
+  form.statut_id = defaultStatutId.value;
 });
+
+const affecterApresCreation = ref(false);
+const affectation = reactive({ employe_id: '', date_retour_prevue: '' });
 
 const form = reactive({
   categoryId: '',
@@ -149,7 +177,7 @@ const handleSubmit = async () => {
     return;
   }
   try {
-    await eqStore.addMaterial(form.categoryId, {
+    const created = await eqStore.addMaterial(form.categoryId, {
       name: form.name,
       reference: form.reference,
       statut_id: form.statut_id,
@@ -158,8 +186,22 @@ const handleSubmit = async () => {
         catStore.fieldsFor(form.categoryId).map((f) => [f.key, form[f.key] || undefined])
       ),
     });
-    toast.success('Matériel enregistré avec succès.');
+    if (affecterApresCreation.value) {
+      if (!affectation.employe_id) {
+        toast.error('Sélectionnez un collaborateur pour l\'affectation.');
+        return;
+      }
+      await affStore.createAffectation({
+        employe_id: Number(affectation.employe_id),
+        date_retour_prevue: affectation.date_retour_prevue || null,
+        items: [{ equipement_id: created.id, quantite: 1 }],
+      });
+      toast.success('Matériel enregistré et affecté avec succès.');
+    } else {
+      toast.success('Matériel enregistré avec succès.');
+    }
     resetForm();
+    router.push('/categories');
   } catch (error) {
     toast.error(getErrorMessage(error, 'Erreur lors de l\'enregistrement.'));
   }

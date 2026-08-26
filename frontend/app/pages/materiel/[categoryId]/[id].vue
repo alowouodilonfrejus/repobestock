@@ -89,7 +89,6 @@
 
 <script setup>
 import { reactive, computed, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
 import { useCategoriesStore } from '@/stores/categories';
 import { useEquipementsStore } from '@/stores/equipements';
 import { getErrorMessage } from '@/utils/errors';

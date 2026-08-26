@@ -1,0 +1,67 @@
+# ============================================
+# BeStock - Docker Compose PRODUCTION
+# ============================================
+# Usage: docker-compose -f docker-compose.prod.yml --env-file env/.env up -d --build
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: bestock_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-bestock_db}
+    ports:
+      - "127.0.0.1:5432:5432"  # Bind localhost only
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-bestock_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - bestock_internal
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bestock_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant}@db:5432/${POSTGRES_DB:-bestock_db}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY manquant — genere avec: python -c 'import secrets; print(secrets.token_urlsafe(32))'}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      FIRST_SUPERUSER_EMAIL: ${FIRST_SUPERUSER_EMAIL:?FIRST_SUPERUSER_EMAIL manquant}
+      FIRST_SUPERUSER_PASSWORD: ${FIRST_SUPERUSER_PASSWORD:?FIRST_SUPERUSER_PASSWORD manquant}
+      FIRST_SUPERUSER_USERNAME: ${FIRST_SUPERUSER_USERNAME:-superadmin}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-["https://votre-domaine.com"]}
+      ENV: production
+    ports:
+      - "127.0.0.1:8000:8000"  # Bind localhost only (derrière reverse proxy)
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    command: >
+      sh -c "python -m app.internal_data &&
+             exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4"
+    networks:
+      - bestock_internal
+
+volumes:
+  postgres_data:
+
+networks:
+  bestock_internal:
+    driver: bridge
+    internal: true  # Pas d'accès internet direct depuis les conteneurs

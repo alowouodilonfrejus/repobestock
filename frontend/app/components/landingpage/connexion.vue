@@ -15,11 +15,12 @@
         
         <div class="mb-8">
           <h2 class="text-2xl font-bold text-blue-950">
-            {{ isSignUp ? 'Créer un compte Admin' : 'Espace Admin' }}
+            {{ isSignUp ? 'Créer un compte' : 'Espace BeStock' }}
           </h2>
           <p class="text-slate-500 text-sm mt-1.5">
-            {{ isSignUp ? 'Remplissez les informations ci-dessous' : 'Veuillez saisir vos identifiants' }}
+            {{ isSignUp ? 'Collaborateurs et administrateurs — remplissez les informations' : 'Collaborateurs et administrateurs — saisissez vos identifiants' }}
           </p>
+          <p v-if="!isSignUp" class="text-xs text-slate-400 mt-2">Les collaborateurs se connectent avec l'email fourni par l'admin et accèdent à <span class="font-semibold text-slate-600">Mon matériel</span>.</p>
         </div>
 
         <form @submit.prevent="handleSubmit" class="space-y-5">
@@ -40,25 +41,14 @@
           </div>
 
           <div v-if="isSignUp">
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Rôle demandé</label>
-            <div class="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                @click="form.role = 'admin'"
-                class="px-4 py-3 rounded-xl border text-sm font-semibold transition-all"
-                :class="form.role === 'admin' ? 'bg-blue-900 text-white border-blue-900 shadow-md' : 'border-slate-200 text-slate-600 hover:border-blue-300'"
-              >
-                Admin
-              </button>
-              <button
-                type="button"
-                @click="form.role = 'manager'"
-                class="px-4 py-3 rounded-xl border text-sm font-semibold transition-all"
-                :class="form.role === 'manager' ? 'bg-blue-900 text-white border-blue-900 shadow-md' : 'border-slate-200 text-slate-600 hover:border-blue-300'"
-              >
-                Manager
-              </button>
-            </div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Fonction (optionnel)</label>
+            <input
+              v-model="form.fonction"
+              type="text"
+              placeholder="ex: Technicien, Magasinier…"
+              class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-slate-800 text-sm bg-slate-50/50"
+            />
+            <p class="text-xs text-slate-400 mt-2">Votre compte sera activé après validation par un administrateur, qui définira votre rôle.</p>
           </div>
 
           <div>
@@ -117,7 +107,6 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '~/stores/auth'
 
 const props = defineProps({
@@ -146,7 +135,7 @@ const form = reactive({
   fullName: '',
   email: '',
   password: '',
-  role: 'manager'
+  fonction: ''
 })
 
 const errors = reactive({
@@ -191,18 +180,25 @@ const handleSubmit = async () => {
   isSubmitting.value = true
   try {
     if (isSignUp.value) {
-      await authStore.register({
+      await authStore.registerEmploye({
+        nom_complet: form.fullName,
         email: form.email,
-        username: form.fullName,
         password: form.password,
-        role: form.role
+        fonction: form.fonction || undefined
       })
-      errorMessage.value = 'Compte créé avec succès. Il sera actif après validation par le super admin.'
+      errorMessage.value = 'Inscription enregistrée. Votre compte sera actif après validation par un administrateur.'
       return
     } else {
       await authStore.login(form.email, form.password)
+      const user = authStore.user
+      // Collaborateurs (manager) → Mon matériel, Admins → Dashboard
+      if (['manager', 'employe'].includes(user?.role)) {
+        router.push('/mes-materiels')
+      } else {
+        router.push('/dashboard')
+      }
+      return
     }
-    router.push('/dashboard')
   } catch (error) {
     errorMessage.value = error.response?.data?.detail || 'Une erreur est survenue. Veuillez réessayer.'
   } finally {

@@ -1,0 +1,15 @@
+env/.env
+env/.env.production
+firebase-debug.log
+*.log
+__pycache__/
+*.pyc
+*.pyo
+.nuxt/
+.output/
+dist/
+node_modules/
+.venv/
+.env
+.env.*
+!.env.example

@@ -8,25 +8,6 @@ from app.crud import refresh_token as crud_refresh
 from app.crud import user as crud_user
 from app.models.user import UserRole
 from app.schemas.token import LoginRequest, RefreshRequest, Token
-from app.schemas.user import UserCreate
-
-
-async def register(db: AsyncSession, payload: UserCreate):
-    existing = await crud_user.get_by_email(db, payload.email)
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Cet email est deja utilise",
-        )
-    requested_role = payload.role or UserRole.MANAGER
-    if requested_role not in (UserRole.ADMIN, UserRole.MANAGER):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Role non autorise a l'inscription",
-        )
-    return await crud_user.create(
-        db, payload, role=requested_role, is_active=False
-    )
 
 
 async def login(db: AsyncSession, payload: LoginRequest) -> Token:
@@ -39,7 +20,7 @@ async def login(db: AsyncSession, payload: LoginRequest) -> Token:
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Compte en attente de validation par le super admin",
+            detail="Compte en attente de validation par un administrateur",
         )
     refresh_token = generate_refresh_token()
     await crud_refresh.create(db, user.id, refresh_token)

@@ -57,7 +57,7 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useCategoriesStore } from '@/stores/categories';
 import { useEquipementsStore } from '@/stores/equipements';
 

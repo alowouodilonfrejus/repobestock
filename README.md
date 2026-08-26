@@ -18,14 +18,16 @@ Plateforme de gestion de stocks et d'inventaire : frontend **Nuxt 4 / Vue 3** + 
 bestock-main/
 ├── frontend/                   # Frontend Nuxt 4
 │   ├── app/                    # Source de l'application
-│   │   ├── components/         # landingpage/, dashboard/, ui/
-│   │   ├── layouts/            # default, dashboard (sidebar)
+│   │   ├── components/         # landingpage/, dashboard/ (DashboardStatCard, QuickActions, StockOverview, AlertsPanel, ActivityFeed, MaterialTable), ui/
+│   │   ├── layouts/            # default, dashboard (sidebar SaaS + header sticky + recherche globale)
 │   │   ├── middleware/         # auth.global.js (routes protégées)
-│   │   ├── pages/              # index, connexion, inscription, dashboard,
-│   │   │                       #   categories/, materiel/, equipements/, historique, compte
+│   │   ├── pages/              # index, connexion, inscription, dashboard (centre de contrôle),
+│   │   │                       #   categories/, materiel/, equipements/, employes/, affectations/, maintenance/, historique, compte
 │   │   ├── plugins/            # auth.client.js (hydratation du store)
-│   │   ├── stores/             # Pinia : auth, categories, equipements, historique, users
-│   │   └── utils/api.js        # client axios → http://localhost:8000/api/v1
+│   │   ├── stores/             # Pinia : auth, categories, equipements, affectations, maintenances, employes, historique, users
+│   │   ├── composables/        # useToast, useConfirm, useRole (RBAC affichage)
+│   │   ├── middleware/         # auth.global.js (session + redirections par rôle)
+│   │   └── utils/              # api.js, errors.js, permissions.js (miroir matrice RBAC)
 │   ├── public/                 # fichiers statiques
 │   ├── nuxt.config.ts
 │   └── package.json
@@ -36,17 +38,19 @@ bestock-main/
 │   │   │   │                   #   equipements, historique, users
 │   │   │   ├── deps.py         # dépendances (session DB, user courant, rôles)
 │   │   │   └── router.py       # agrégation des routes
-│   │   ├── core/               # config (pydantic-settings), security (JWT/bcrypt)
+│   │   ├── core/               # config (pydantic-settings), security (JWT/bcrypt),
+│   │   │                       #   permissions.py (matrice RBAC centralisée)
 │   │   ├── crud/               # accès base par entité
 │   │   ├── db/                 # session async (asyncpg), init, migrations, seed
+│   │   ├── middleware/         # sécurité : headers HTTP + rate limiting
 │   │   ├── models/             # User, Category, Statut, Emplacement, Equipement, Historique
 │   │   ├── schemas/            # schémas Pydantic
 │   │   └── services/           # logique métier (auth, user, equipement)
 │   ├── Dockerfile
-│   ├── docker-compose.yml      # db (postgres:16) + api (fastapi)
+│   ├── docker-compose.yml      # db (postgres:16) + api (fastapi) — dev
 │   └── requirements.txt
-├── docs/                       # documentation Word + diagrammes UML
-│   └── uml/                    # Diagrammes UML (classes, use case, séquence)
+├── docker-compose.prod.yml      # déploiement production durci (variables d'env obligatoires)
+├── docs/                        # documentation complète (voir docs/README.md)
 └── README.md
 ```
 
@@ -62,7 +66,7 @@ bestock-main/
 
 ```bash
 cd backend
-docker compose up -d --build
+docker compose --env-file ../env/.env up -d --build
 ```
 
 - **API** : http://localhost:8000 — docs Swagger : http://localhost:8000/api/v1/openapi.json
@@ -70,14 +74,18 @@ docker compose up -d --build
 
 Le conteneur `api` exécute automatiquement le seed (création des tables + données initiales).
 
-**Compte super admin par défaut**
+**Compte super admin**
 
-| Email | Mot de passe |
-|---|---|
-| `admin@bestock.dev` | `admin1234` |
+Les identifiants du super admin sont définis **uniquement** via les variables d'environnement
+(voir `env/.env.example` comme modèle, et `env/.env.production` pour la production) :
+`FIRST_SUPERUSER_EMAIL`, `FIRST_SUPERUSER_PASSWORD`, `FIRST_SUPERUSER_USERNAME`.
 
-Configurable via variables d'environnement (voir `backend/.env.example`) :
-`FIRST_SUPERUSER_EMAIL`, `FIRST_SUPERUSER_PASSWORD`, `DATABASE_URL`, `SECRET_KEY`.
+> ⚠️ **Aucun mot de passe par défaut n'est embarqué dans le code.** En production,
+> renseignez un mot de passe fort avant le premier démarrage ; si le compte existe déjà,
+> mettez à jour la base ou supprimez le volume pour re-seeder.
+
+Autres variables : `DATABASE_URL`, `SECRET_KEY`, `ACCESS_TOKEN_EXPIRE_MINUTES`,
+`REFRESH_TOKEN_EXPIRE_DAYS`, `BACKEND_CORS_ORIGINS`.
 
 ### 2. Frontend
 
@@ -91,6 +99,48 @@ npm run dev
 ```
 
 Frontend sur **http://localhost:3000** — le client API pointe vers `http://localhost:8000/api/v1` (configuré dans `frontend/app/utils/api.js`).
+
+### 3. Déploiement production
+
+```bash
+cp env/.env.production env/.env
+# éditer env/.env : mots de passe forts, domaines réels, SECRET_KEY fraîche
+
+docker compose -f docker-compose.prod.yml --env-file env/.env up -d --build
+```
+
+Le compose production durcit le déploiement : ports liés à `127.0.0.1` (reverse proxy requis),
+réseau Docker interne isolé, secrets injectés uniquement via variables d'environnement.
+
+## Sécurité (implémentée)
+
+| Mesure | Détail |
+|---|---|
+| **Mots de passe** | hachage bcrypt + sel, troncature gérée (limite 72 octets) |
+| **JWT** | signature HS256, expiration courte (30 min), type de token vérifié |
+| **Refresh tokens** | aléatoires (`secrets.token_urlsafe(48)`), stockés **hachés SHA-256** en base |
+| **Rate limiting** | middleware maison (pur Starlette, zéro dépendance) : login 5 req/min, refresh/logout 10 req/min par IP → HTTP 429 (`app/middleware/rate_limit.py`) |
+| **Headers de sécurité** | CSP, X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy, Permissions-Policy (`app/middleware/security_headers.py`) |
+| **CORS** | liste blanche stricte via `BACKEND_CORS_ORIGINS` (jamais `*` avec credentials) |
+| **Validation entrées** | schémas Pydantic stricts → 422 avant tout accès DB (anti-injection SQL) |
+| **Secrets** | jamais dans le code : `.env` ignoré par git, `.env.example` comme modèle public |
+
+## Rôles et permissions (RBAC)
+
+Matrice centralisée : `backend/app/core/permissions.py` (source de vérité API)
+et `frontend/app/utils/permissions.js` (miroir pour l'affichage).
+
+| Rôle | Accès |
+|------|-------|
+| **SUPERADMIN** | tout le système (`"*"`) — seul à gérer les comptes `users:*` et les rôles |
+| **ADMIN** | exploitation quotidienne **REST CRUD complet** : stock, catégories, collaborateurs, **affectations** (`affectations:read/write`), **maintenance** (`maintenances:read/write`), historique, fournisseurs — **sans** gestion des comptes |
+| **MANAGER** | lecture seule : `dashboard:view`, `referentiels:read`, `stock:read`, `employes:read`, `historique:read`, `fournisseurs:read` — pas d'écriture stock/affectations/maintenance |
+| **COLLABORATEUR** | espace personnel uniquement `moi:read` : mes matériels (`/employes/moi`, `/affectations/moi`), mes incidents (`/maintenances/moi`) |
+
+- Inscription publique : `POST /api/v1/employes/inscription` → compte inactif + fiche liée,
+  validé via `/users/{id}/valider` ou rejeté via `/users/{id}/rejeter` (**superadmin uniquement**)
+- Sidebar dynamique + masquage des actions côté client ; **autorité côté serveur**
+  via le guard `PermDep("ressource:action")` sur chaque route (403 sinon)
 
 ## Architecture du code (layers)
 
@@ -141,7 +191,7 @@ Les schémas Pydantic (`backend/app/schemas/`) valident les entrées avant tout 
 
 - **Mot de passe** : minimum **8 caractères** (`Field(min_length=8)`)
 - **Champs texte** : longueur maximale alignée sur les colonnes SQL (ex. `reference` ≤ 50, `nom` ≤ 150, `marque`/`modele` ≤ 100, `numero_serie` ≤ 150) — un dépassement renvoie un **422** clair plutôt qu'une erreur 500 de la base
-- Rôles : enum (`manager` / `admin` / `superadmin`) — toute autre valeur → 422
+- Rôles : enum (`employe` / `manager` / `admin` / `superadmin`) — toute autre valeur → 422
 
 ## Optimisations (charges réseau réduites)
 

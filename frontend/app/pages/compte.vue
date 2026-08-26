@@ -2,8 +2,8 @@
   <NuxtLayout name="dashboard">
     <div class="max-w-2xl mx-auto">
       <div class="mb-10">
-        <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Compte Admin</h2>
-        <p class="text-gray-500 mt-2 text-lg">Informations du compte administrateur.</p>
+        <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Mon compte</h2>
+        <p class="text-gray-500 mt-2 text-lg">Informations du compte connecté.</p>
       </div>
 
       <UiCard title="Profil" class="shadow-sm border border-gray-200">
@@ -40,7 +40,7 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 
 const authStore = useAuthStore();
