@@ -39,6 +39,19 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
 
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/bestock_db"
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def _coerce_database_url(cls, v: str) -> str:
+        # Railway fournit DATABASE_URL en postgres:// ou postgresql://
+        # SQLAlchemy asyncpg exige postgresql+asyncpg://
+        if isinstance(v, str):
+            if v.startswith("postgres://"):
+                v = v.replace("postgres://", "postgresql+asyncpg://", 1)
+            elif v.startswith("postgresql://"):
+                v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+            # Railway ajoute parfois ?sslmode=require — asyncpg le supporte
+        return v
     SECRET_KEY: str = "change-me-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30

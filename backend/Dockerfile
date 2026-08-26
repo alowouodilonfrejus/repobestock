@@ -1,11 +1,23 @@
-# Base locale reutilisable : contient deja Python 3.12 + FastAPI + SQLAlchemy
-# async + asyncpg + PyJWT + bcrypt + pydantic-settings (aucun acces internet requis).
-FROM scolarship-2026-main-api:latest
+# Railway / Prod : image publique (remplace scolarship-2026-main-api locale)
+FROM python:3.12-slim
 
 WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+# Dépendances système pour asyncpg/bcrypt
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY ./app ./app
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Railway injecte $PORT — fallback 8000 en local
+CMD ["sh", "-c", "python -m app.internal_data && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
