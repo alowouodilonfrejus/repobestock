@@ -1,20 +1,17 @@
 import axios from 'axios'
 
 function getApiBase() {
-  // SSR: ne jamais appeler useRuntimeConfig au top-level (NUXT_E1001)
-  // useRuntimeConfig() n'est valide que dans setup/plugin/middleware
-  if (import.meta.server) return '/api/v1'
   try {
     if (typeof useRuntimeConfig === 'function') {
       const cfg = useRuntimeConfig()
       if (cfg?.public?.apiBase) return cfg.public.apiBase
     }
   } catch {}
-  return import.meta.env.NUXT_PUBLIC_API_BASE || '/api/v1'
+  if (typeof process !== 'undefined' && process.env?.NUXT_PUBLIC_API_BASE) return process.env.NUXT_PUBLIC_API_BASE
+  return import.meta.env?.NUXT_PUBLIC_API_BASE || '/api/v1'
 }
 
 const api = axios.create({
-  baseURL: getApiBase(),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -62,6 +59,7 @@ async function refreshTokens() {
 }
 
 api.interceptors.request.use((config) => {
+  config.baseURL = getApiBase()
   if (typeof localStorage !== 'undefined') {
     const token = localStorage.getItem('bestock_token')
     if (token) {
