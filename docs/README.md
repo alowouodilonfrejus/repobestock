@@ -28,3 +28,13 @@ Bienvenue dans la documentation complète de **BeStock**, la plateforme de gesti
 | Développeur backend | 02, 04, 05, 06 |
 | Développeur frontend | 02, 04, 07 |
 | DevOps | 03, 06 |
+
+## Sécurité & RBAC — vérifié
+
+Le système d'autorisation a été **testé concrètement** (août 2026) :
+
+- **Backend** : `/api/v1/users` renvoie **403 Forbidden** pour les rôles `ADMIN`, `MANAGER`, `EMPLOYE`
+- **Frontend** : Le lien "Utilisateurs" n'apparaît que pour le rôle `SUPERADMIN` (via `can('users:read')`)
+- **Middleware** : Toute tentative directe `/users` redirige vers `/mes-materiels` si le rôle n'a pas la permission
+
+> 📖 Documentation détaillée : voir [`06-securite.md`](06-securite.md) pour la matrice RBAC complète, les dépendances FastAPI et les tests effectués.

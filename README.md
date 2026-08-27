@@ -139,6 +139,16 @@ et `frontend/app/utils/permissions.js` (miroir pour l'affichage).
 
 - Inscription publique : `POST /api/v1/employes/inscription` → compte inactif + fiche liée,
   validé via `/users/{id}/valider` ou rejeté via `/users/{id}/rejeter` (**superadmin uniquement**)
+
+### RBAC vérifié (août 2026)
+
+Concordance backend ↔ frontend confirmée :
+
+- **Backend** : Seule l'authentification `SUPERADMIN` via `RolesDep(UserRole.SUPERADMIN)` ou `PermDep("users:read")` obtient l'accès à `/api/v1/users` (tous les autres rôles reçoivent **403 Forbidden**)
+- **Frontend** : La sidebar du dashboard masque dynamiquement le lien "Utilisateurs" pour les rôles `ADMIN`, `MANAGER`, `EMPLOYE` (testé via le helper `can('users:read')` dans `useRole.js`)
+- **Middleware** : Navigation directe vers `/users` est interceptée par `auth.global.js` et redirige vers `/mes-materiels` si le rôle n'a pas la permission `users:read`
+
+> Le système de rôles est cohérent : le superadmin voit et peut gérer les utilisateurs, tandis que l'admin/manager/employé n'ont aucun accès (côté serveur comme côté client).
 - Sidebar dynamique + masquage des actions côté client ; **autorité côté serveur**
   via le guard `PermDep("ressource:action")` sur chaque route (403 sinon)
 

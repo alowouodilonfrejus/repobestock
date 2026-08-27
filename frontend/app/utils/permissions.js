@@ -1,6 +1,4 @@
-// DEPRECATED : matrice dupliquee — ne plus utiliser comme source de verite.
-// Source de verite = backend/app/core/permissions.py expose via GET /auth/me {permissions}
-// Ce fichier reste en fallback offline (hydrate avant fetchMe) et sera supprime apres migration complete.
+
 export const ROLE_PERMISSIONS = {
   superadmin: ['*'],
   admin: [

@@ -64,6 +64,9 @@ def role_permissions(role: UserRole) -> set[str]:
         for p in PERMISSIONS.values():
             all_perms.update(p)
         all_perms.discard("*")
+        # Ajouter les permissions de gestion users (presentes dans les routes
+        # mais absentes du dict PERMISSIONS car non attribuees a un role specifique)
+        all_perms.update({"users:read", "users:validate"})
         return all_perms
     return set(perms)
 

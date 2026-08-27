@@ -16,7 +16,7 @@ async def _get_token() -> str:
     async with AsyncClient(base_url="http://localhost:8000") as tmp:
         login = await tmp.post(
             "/api/v1/auth/login/json",
-            json={"email": "admin@bestock.dev", "password": "Betogethers@123"},
+            json={"email": "admin@bestock.dev", "password": "admin1234"},
         )
         assert login.status_code == 200, f"Login echoue : {login.text}"
         _cached_token = login.json()["access_token"]
