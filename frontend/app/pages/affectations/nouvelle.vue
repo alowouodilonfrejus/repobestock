@@ -108,7 +108,7 @@
 
         <div class="flex justify-end gap-3 pt-2">
           <NuxtLink to="/affectations" class="px-5 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition">Annuler</NuxtLink>
-          <button type="submit" :disabled="!formulaireValide || saving" class="px-6 py-2.5 bg-blue-900 text-white rounded-xl text-sm font-semibold hover:bg-blue-800 transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
+          <button type="submit" :disabled="saving" class="px-6 py-2.5 bg-blue-900 text-white rounded-xl text-sm font-semibold hover:bg-blue-800 transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
             {{ saving ? 'Enregistrement…' : 'Valider l\'affectation' }}
           </button>
         </div>
