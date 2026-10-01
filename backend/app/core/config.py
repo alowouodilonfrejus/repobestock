@@ -29,6 +29,30 @@ def _resolve_env_file() -> Path:
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 ENV_FILE = _resolve_env_file()
 
+_PRODUCTION_VALUES = {"production", "prod"}
+
+
+def is_production() -> bool:
+    """Detecte un deploiement production, quel que soit le fournisseur.
+
+    Couvre le drapeur classique ENV/ENVIRONMENT/APP_ENV ainsi que les
+    variables injectees automatiquement par Railway, Render et Vercel,
+    afin que les gardes-fous secrets ne dependent plus d'un seul flag.
+    """
+    flags = (
+        "ENV",
+        "ENVIRONMENT",
+        "APP_ENV",
+        "RAILWAY_ENVIRONMENT",
+        "RAILWAY_PROJECT_ENVIRONMENT",
+        "RENDER",
+        "VERCEL_ENV",
+    )
+    return any(
+        (os.getenv(flag) or "").strip().lower() in _PRODUCTION_VALUES
+        for flag in flags
+    )
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -67,8 +91,8 @@ class Settings(BaseSettings):
     @classmethod
     def _check_secret_key(cls, v: str) -> str:
         # En production on exige une cle forte ; en dev on avertit seulement
-        if v == "change-me-in-production":
-            if os.getenv("ENV") == "production" or os.getenv("ENVIRONMENT") == "production":
+        if v == "change-me-in-production" or v.startswith("REPLACE_ME"):
+            if is_production():
                 raise ValueError(
                     "SECRET_KEY doit etre defini via variable d'environnement en production "
                     "(min 32 caracteres, genere avec: python -c 'import secrets; print(secrets.token_urlsafe(32))')"
@@ -94,9 +118,7 @@ class Settings(BaseSettings):
     @field_validator("FIRST_SUPERUSER_PASSWORD")
     @classmethod
     def _check_superuser_password(cls, v: str) -> str:
-        if v == "admin1234" and (
-            os.getenv("ENV") == "production" or os.getenv("ENVIRONMENT") == "production"
-        ):
+        if v == "admin1234" and is_production():
             raise ValueError("FIRST_SUPERUSER_PASSWORD par defaut 'admin1234' interdit en production")
         return v
 

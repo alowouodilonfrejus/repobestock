@@ -1,0 +1,5 @@
+# Dependances de developpement / tests (a ajouter a l'image si CI)
+#   pip install -r requirements.txt -r requirements-dev.txt
+pytest==9.1.1
+pytest-asyncio==1.4.0
+httpx==0.28.1

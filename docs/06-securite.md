@@ -57,7 +57,12 @@ Middleware maison (**pur Starlette, zéro dépendance**) — `app/middleware/rat
 | `POST /auth/login/json`, `/employes/inscription` | 5 req / minute / IP |
 | `POST /auth/refresh`, `/auth/logout` | 10 req / minute / IP |
 
-Dépassement → **HTTP 429** + header `Retry-After`. Fenêtre glissante en mémoire, clé = IP cliente.
+Dépassement → **HTTP 429** + header `Retry-After`. Fenêtre glissante, clé = IP cliente.
+
+- Compteur **partagé entre workers** (fichier `/tmp/bestock_ratelimit.json` verrouillé par `flock`) ;
+  repli mémoire locale si `fcntl` indisponible ou si le magasin est inaccessible (jamais de blocage)
+- `X-Forwarded-For` ignoré par défaut : renseigner `TRUST_PROXY=true` uniquement derrière un
+  proxy de confiance, sinon un client pourrait falsifier son IP (rate limit **et** audit IP)
 
 ## Headers de sécurité
 
@@ -137,7 +142,7 @@ Consultable via `GET /api/v1/historique` et par équipement.
 
 ## Limitations connues & pistes
 
-- Rate limiting en mémoire : remettre à zéro au redémarrage ; pour du multi-instances,
-  passer le compteur dans Redis
+- Rate limiting partagé via fichier local : OK pour un seul hôte ; pour du multi-instances
+  (plusieurs hôtes), passer le compteur dans Redis
 - Pas de verrouillage de compte après N échecs (le rate limiting limite déjà la force brute)
 - HSTS à activer dès que TLS est en place

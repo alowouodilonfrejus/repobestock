@@ -1,7 +1,7 @@
 export default defineNuxtRouteMiddleware((to) => {
   if (!import.meta.client) return
 
-  const protectedRoutes = ['/dashboard', '/categories', '/materiel', '/compte', '/historique', '/equipements', '/users']
+  const protectedRoutes = ['/dashboard', '/categories', '/materiel', '/compte', '/historique', '/equipements', '/users', '/employes', '/affectations', '/maintenance']
 
   const needsAuth = protectedRoutes.some((path) => to.path.startsWith(path))
   const isStaffRoute = ['/dashboard', '/categories', '/materiel', '/historique', '/equipements', '/employes', '/affectations', '/maintenance'].some((path) => to.path.startsWith(path))

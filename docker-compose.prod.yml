@@ -40,6 +40,8 @@ services:
       FIRST_SUPERUSER_PASSWORD: ${FIRST_SUPERUSER_PASSWORD:?FIRST_SUPERUSER_PASSWORD manquant}
       FIRST_SUPERUSER_USERNAME: ${FIRST_SUPERUSER_USERNAME:-superadmin}
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-["https://votre-domaine.com"]}
+      # true UNIQUEMENT derriere un reverse-proxy de confiance (Nginx/Traefik)
+      TRUST_PROXY: ${TRUST_PROXY:-false}
       ENV: production
     ports:
       - "127.0.0.1:8000:8000"  

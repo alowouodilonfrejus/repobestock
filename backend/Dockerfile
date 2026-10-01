@@ -17,6 +17,11 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY ./app ./app
 
+# Execution sans privileges : l'API n'a besoin d'ecrire nulle part
+# (le magasin rate-limit vit dans /tmp, accessible en lecture-ecriture)
+RUN useradd --create-home --uid 10001 --shell /usr/sbin/nologin bestock
+USER bestock
+
 EXPOSE 8000
 
 # Railway injecte $PORT — fallback 8000 en local

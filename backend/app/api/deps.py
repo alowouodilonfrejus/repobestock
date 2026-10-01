@@ -126,8 +126,10 @@ def PermDep(permission: str):
 
 
 async def get_client_ip(request: Request) -> str | None:
-    # Derriere reverse-proxy (Nginx/Traefik) l'IP reelle est dans X-Forwarded-For
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else None
+    # Derriere reverse-proxy (Nginx/Traefik) l'IP reelle est dans
+    # X-Forwarded-For — uniquement si TRUST_PROXY est active
+    # (meme regle que le rate limiting, cf. app/middleware/rate_limit.py)
+    from app.middleware.rate_limit import client_ip
+
+    ip = client_ip(request)
+    return None if ip in {"?", ""} else ip
