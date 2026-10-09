@@ -11,7 +11,10 @@ function getApiBase() {
   return import.meta.env?.NUXT_PUBLIC_API_BASE || '/api/v1'
 }
 
+// Les tokens vivent en cookies httpOnly (fixes par le backend) :
+// withCredentials est indispensable pour les envoyer/recuperer en cross-origin
 const api = axios.create({
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -24,8 +27,10 @@ let refreshPromise = null
 function clearSession() {
   if (typeof localStorage !== 'undefined') {
     try {
+      // Nettoyage des anciennes cles (avant migration vers les cookies)
       localStorage.removeItem('bestock_token')
       localStorage.removeItem('bestock_refresh')
+      localStorage.removeItem('bestock_session')
       localStorage.removeItem('bestock_user')
       localStorage.removeItem('bestock_permissions')
     } catch {}
@@ -37,17 +42,10 @@ function clearSession() {
 
 async function refreshTokens() {
   if (refreshPromise) return refreshPromise
-  const refreshToken = typeof localStorage !== 'undefined' ? localStorage.getItem('bestock_refresh') : null
-  if (!refreshToken) {
-    return Promise.reject(new Error('No refresh token'))
-  }
+  // Refresh via cookie httpOnly : aucun jeton expose en JS
   refreshPromise = api
-    .post('/auth/refresh', { refresh_token: refreshToken })
-    .then(({ data }) => {
-      localStorage.setItem('bestock_token', data.access_token)
-      localStorage.setItem('bestock_refresh', data.refresh_token)
-      return data.access_token
-    })
+    .post('/auth/refresh', {})
+    .then(() => true)
     .catch((e) => {
       // Token invalide/expire -> ne pas boucler, propager pour clearSession
       throw e
@@ -60,12 +58,6 @@ async function refreshTokens() {
 
 api.interceptors.request.use((config) => {
   config.baseURL = getApiBase()
-  if (typeof localStorage !== 'undefined') {
-    const token = localStorage.getItem('bestock_token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-  }
   return config
 })
 
@@ -78,8 +70,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && original && !original._retry && !isAuthUrl) {
       original._retry = true
       try {
-        const newToken = await refreshTokens()
-        original.headers.Authorization = `Bearer ${newToken}`
+        await refreshTokens()
+        // Les cookies sont renvoyes automatiquement par le navigateur
         return api(original)
       } catch (refreshError) {
         // Echec refresh -> deconnecter, mais ne pas boucler

@@ -153,7 +153,7 @@ Un fichier par entité, fonctions async réutilisables :
 | `nuxt.config.ts` | Modules (tailwind, fonts, icon, image, pinia), config icônes bundleées, variables publiques |
 | `tsconfig.json` | Config TypeScript (le code reste majoritairement JS) |
 | `.gitignore` | Exclut node_modules, .nuxt, .output, dist |
-| `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `package-lock.json` | Verrous de dépendances (npm ET pnpm) |
+| `package-lock.json` | Verrou de dépendances npm (npm ET Docker `npm ci` utilisent ce format) |
 
 ### 3.2 `frontend/app/` — Cœur applicatif
 

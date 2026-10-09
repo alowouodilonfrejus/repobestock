@@ -1,36 +1,35 @@
 import { defineStore } from 'pinia'
 import api from '~/utils/api'
 
+// Marqueur non sensible : il dit seulement "une session a existe sur cet
+// appareil" pour deciding s'il faut valider les cookies au demarrage.
+// Les tokens eux-memes sont en cookies httpOnly, jamais en JS/localStorage.
+const SESSION_FLAG = 'bestock_session'
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    token: null,
-    refreshToken: null,
     user: null,
     permissions: [],
+    authenticated: false,
+    sessionReady: false,
   }),
   getters: {
-    isAuthenticated: (state) => !!state.token,
+    isAuthenticated: (state) => state.authenticated,
     can: (state) => (perm) => (state.permissions || []).includes(perm) || (state.permissions || []).includes('*'),
     isSuperAdmin: (state) => state.user?.role === 'superadmin',
   },
   actions: {
-    setTokens(accessToken, refreshToken) {
-      this.token = accessToken
-      this.refreshToken = refreshToken
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('bestock_token', accessToken)
-        localStorage.setItem('bestock_refresh', refreshToken)
-      }
-    },
     setUser(user) {
       this.user = user
       if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('bestock_user', JSON.stringify(user))
+        try { localStorage.setItem('bestock_user', JSON.stringify(user)) } catch {}
       }
     },
     async login(email, password) {
       const { data } = await api.post('/auth/login/json', { email, password })
-      this.setTokens(data.access_token, data.refresh_token)
+      if (typeof localStorage !== 'undefined') {
+        try { localStorage.setItem(SESSION_FLAG, '1') } catch {}
+      }
       await this.fetchMe()
       return data
     },
@@ -39,29 +38,42 @@ export const useAuthStore = defineStore('auth', {
       return data
     },
     async refresh() {
-      const refreshToken = this.refreshToken
-      if (!refreshToken) throw new Error('No refresh token')
-      const { data } = await api.post('/auth/refresh', { refresh_token: refreshToken })
-      this.setTokens(data.access_token, data.refresh_token)
+      const { data } = await api.post('/auth/refresh', {})
+      await this.fetchMe()
       return data
     },
     async fetchMe() {
       const { data } = await api.get('/auth/me')
       this.setUser(data)
       this.permissions = data.permissions || []
+      this.authenticated = true
       if (typeof localStorage !== 'undefined') {
         try { localStorage.setItem('bestock_permissions', JSON.stringify(this.permissions)) } catch {}
+        try { localStorage.setItem(SESSION_FLAG, '1') } catch {}
       }
       return data
     },
-    hydrate() {
-      if (typeof localStorage === 'undefined') return
-      const token = localStorage.getItem('bestock_token')
-      const refresh = localStorage.getItem('bestock_refresh')
+    clearLocal() {
+      this.user = null
+      this.permissions = []
+      this.authenticated = false
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.removeItem(SESSION_FLAG)
+          localStorage.removeItem('bestock_user')
+          localStorage.removeItem('bestock_permissions')
+        } catch {}
+      }
+    },
+    async hydrate() {
+      if (typeof localStorage === 'undefined') {
+        this.sessionReady = true
+        return
+      }
+      // Cache local pour un affichage immediat (non sensible)...
       const user = localStorage.getItem('bestock_user')
       const perms = localStorage.getItem('bestock_permissions')
-      if (token) this.token = token
-      if (refresh) this.refreshToken = refresh
+      const hadSession = localStorage.getItem(SESSION_FLAG)
       if (user) {
         try {
           this.user = JSON.parse(user)
@@ -72,27 +84,37 @@ export const useAuthStore = defineStore('auth', {
       if (perms) {
         try { this.permissions = JSON.parse(perms) } catch { this.permissions = [] }
       }
-      // Revalider en arriere-plan pour eviter drift (permissions serveur = source de verite)
-      if (this.token) this.fetchMe().catch(() => {})
+      if (!hadSession) {
+        // Pas de session precedente : on reste anonyme sans appels inutiles
+        // (un 401 ici declencherait un refresh inutile puis une redirection)
+        this.authenticated = false
+        this.sessionReady = true
+        return
+      }
+      try {
+        // Validation des cookies ; l'intercepteur api.js tente le refresh
+        // automatiquement si l'access cookie est expire
+        await this.fetchMe()
+      } catch (e) {
+        const status = e?.response?.status
+        if (status === 401) {
+          // Refresh refuse : session terminee
+          this.clearLocal()
+        } else if (!e?.response) {
+          // Erseau/reseau : on garde le cache, revalidation ulterieure
+          this.authenticated = true
+        }
+      } finally {
+        this.sessionReady = true
+      }
     },
     async logout() {
-      if (this.refreshToken) {
-        try {
-          await api.post('/auth/logout', { refresh_token: this.refreshToken })
-        } catch {
-          // le refresh token sera révoqué par expiration ; on continue
-        }
+      try {
+        await api.post('/auth/logout', {})
+      } catch {
+        // les cookies seront purges par expiration ; on continue
       }
-      this.token = null
-      this.refreshToken = null
-      this.user = null
-      this.permissions = []
-      if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem('bestock_token')
-        localStorage.removeItem('bestock_refresh')
-        localStorage.removeItem('bestock_user')
-        localStorage.removeItem('bestock_permissions')
-      }
+      this.clearLocal()
     }
   }
 })

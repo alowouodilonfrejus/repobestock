@@ -5,25 +5,36 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.cookies import ACCESS_COOKIE
 from app.core.security import decode_access_token
 from app.crud import user as crud_user
 from app.db.session import get_db
 from app.models.user import User, UserRole
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_STR}/auth/login/json"
+    tokenUrl=f"{settings.API_V1_STR}/auth/login/json",
+    # auto_error=False : a l'absence d'en-tete Authorization on retombe
+    # sur le cookie httpOnly (navigation du frontend)
+    auto_error=False,
 )
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
-TokenDep = Annotated[str, Depends(oauth2_scheme)]
+TokenDep = Annotated[str | None, Depends(oauth2_scheme)]
 
 
-async def get_current_user(db: DbSession, token: TokenDep) -> User:
+async def get_current_user(
+    db: DbSession, token: TokenDep, request: Request
+) -> User:
     credentials_error = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Token invalide ou expire",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    if not token:
+        token = request.cookies.get(ACCESS_COOKIE)
+    if not token:
+        raise credentials_error
 
     payload = decode_access_token(token)
     if payload is None or payload.get("sub") is None:
@@ -92,31 +103,6 @@ def require_permission(permission: str):
                 permission,
             )
         return current_user
-
-    return _checker
-
-
-def require_own_or_permission(permission: str, own_check=None):
-    """ABAC : autorise si permission globale OU si own_check(user) == True.
-
-    Ex: require_own_or_permission('employes:read', lambda u, eid: u.employe_id==eid)
-    Simplifie pour /moi : tout ActiveUser avec moi:read passe.
-    """
-
-    from app.core.permissions import role_has
-
-    async def _checker(current_user: ActiveUser) -> User:
-        if role_has(current_user.role, permission):
-            return current_user
-        # Fallback ABAC : employe sur son propre espace
-        if role_has(current_user.role, "moi:read"):
-            # Les routes /moi ou /{id} avec id == employe lie sont autorisees
-            # Le check fin (id == employe.id) est fait dans la route elle-meme
-            return current_user
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Privileges insuffisants",
-        )
 
     return _checker
 

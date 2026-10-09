@@ -6,6 +6,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
+from app.core.config import is_production
+
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response: Response = await call_next(request)
@@ -24,8 +26,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         if forwarded_proto == "https" or request.url.scheme == "https":
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
 
-        # CSP durcie : pas de unsafe-eval en prod, unsafe-inline minimal pour Nuxt
-        is_dev = request.headers.get("host", "").startswith("localhost")
+        # CSP durcie : pas de unsafe-eval en prod.
+        # La decision vient du serveur (ENV/drapeurs fournisseur) et non du
+        # header Host, que n'importe quel client peut falsifier.
+        is_dev = not is_production()
         script_src = "script-src 'self' 'unsafe-inline'"
         if is_dev:
             script_src += " 'unsafe-eval'"

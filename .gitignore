@@ -15,3 +15,6 @@ node_modules/
 .env
 .env.*
 !.env.example
+
+# Doublons générés par l'outillage headroom/rtk (copie .md)
+*.TOON

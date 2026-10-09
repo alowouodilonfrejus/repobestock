@@ -27,6 +27,25 @@ Protections testées :
 - Révocation explicite via `/auth/logout`
 - Durée : 7 jours
 
+### Stockage des tokens (cookies httpOnly)
+Implémentation : `backend/app/core/cookies.py`, frontend `app/utils/api.js` + `stores/auth.js`.
+
+| Cookie | Contenu | Path | Attributs |
+|--------|---------|------|-----------|
+| `bestock_access` | access JWT | `/` | `HttpOnly`, `Max-Age` = durée access token |
+| `bestock_refresh` | refresh token | `/api/v1/auth` | `HttpOnly`, `Max-Age` = 7 jours |
+
+- **Invisible pour JavaScript** : plus aucun token en `localStorage` → un XSS ne peut plus voler la session
+- `SameSite=Lax` en same-site ; `SameSite=None; Secure` en cross-site (frontend et API sur
+  domaines différents, ex. Vercel + Railway) — `Secure` n'est posé que si la requête est en HTTPS
+- Authentification : en-tête `Authorization: Bearer` (clients API/tests) **ou** cookie
+  httpOnly (navigateur), via `get_current_user` (`auto_error=False` + repli cookie)
+- Le frontend n'utilise plus `localStorage` que pour un marqueur non sensible
+  (`bestock_session`) et l'affichage optimiste (utilisateur/permissions)
+- CSRF : l'API n'accepte que `application/json` (requête pré-fléchée) + `allow_origins`
+  restreint en production — un site tiers ne peut pas envoyer d'état sans accord CORS
+- Déploiement : définir `BACKEND_CORS_ORIGINS` et `TRUST_PROXY=true` derrière le reverse proxy
+
 ## Autorisations (RBAC)
 
 Hiérarchie des rôles (matrice `app/core/permissions.py`) :

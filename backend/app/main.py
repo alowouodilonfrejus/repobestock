@@ -14,7 +14,7 @@ app = FastAPI(
 setup_security_headers(app)
 setup_rate_limiting(app)
 
-cors_origins = settings.BACKEND_CORS_ORIGINS if hasattr(settings, 'BACKEND_CORS_ORIGINS') and settings.BACKEND_CORS_ORIGINS else ["http://localhost:3000", "http://localhost:8080"]
+cors_origins = settings.BACKEND_CORS_ORIGINS or ["http://localhost:3000", "http://localhost:8080"]
 
 app.add_middleware(
     CORSMiddleware,

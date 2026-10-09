@@ -23,9 +23,18 @@ export default defineNuxtConfig({
       collections: ['heroicons', 'mdi']
     }
   },
-  routeRules: {
-    '/api/**': { proxy: `${process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000'}/api/**` }
-  },
+  routeRules: (() => {
+    const apiBase = process.env.NUXT_PUBLIC_API_BASE
+    if (apiBase) {
+      return { '/api/**': { proxy: `${apiBase}/api/**` } }
+    }
+    // Dev uniquement : en production sans base explicite, ne jamais
+    // proxifier vers localhost:8000 (conteneur/cible inexistante en prod)
+    if (process.env.NODE_ENV !== 'production') {
+      return { '/api/**': { proxy: 'http://localhost:8000/api/**' } }
+    }
+    return {}
+  })(),
   vite: {
     server: {
       allowedHosts: process.env.NODE_ENV === 'production' ? [] : true,

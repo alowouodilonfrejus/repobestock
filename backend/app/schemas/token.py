@@ -8,7 +8,9 @@ class Token(BaseModel):
 
 
 class RefreshRequest(BaseModel):
-    refresh_token: str
+    # Optionnel : le refresh token peut venir du cookie httpOnly
+    # (frontend) ou du corps JSON (clients API / tests)
+    refresh_token: str | None = None
 
 
 class LoginRequest(BaseModel):
